@@ -1,0 +1,72 @@
+use std::str::FromStr;
+use chrono::NaiveDate;
+use super::calendar::*;
+grammar;
+
+pub NumExpressionM: i64 = {
+    <NumTerm>,
+    <n1:NumTerm> "*" <n2:NumExpressionM>  => n1*n2,
+    <n1:NumTerm> "/" <n2:NumExpressionM>  => n1/n2,
+    <n1:NumTerm> "%" <n2:NumExpressionM>  => n1%n2,
+};
+pub NumTerm:i64 = {
+    <n:NumLiteral> => n,
+    "(" <NumExpression> ")",
+    "(" <d1:DateExpression> "-" <d2:DateExpression> ")" => substract_dates(d1,d2),
+    "dom" "(" <d:DateExpression> ")" => day_of_month(d),
+    "doy" "(" <d:DateExpression> ")" => day_of_year(d),
+    "dow" "(" <d:DateExpression> ")" => day_of_week(d),
+    "woy" "(" <d:DateExpression> ")" => week_of_year(d),
+    "wom" "(" <d:DateExpression> ")" => week_of_month(d),
+    "month" "(" <d:DateExpression> ")" => month(d),
+    "year" "(" <d:DateExpression> ")" => year(d),
+
+}
+pub NumExpression: i64 = {
+    <NumExpressionM>,
+    <n1:NumExpressionM> "+" <n2:NumExpression> => n1+n2,
+    <n1:NumExpressionM> "-" <n2:NumExpression> => n1-n2,
+}
+pub DateExpression:NaiveDate = {
+    <d:DateExpression> "+" <n:NumExpressionM> => add_days(d,n),
+    <d:DateExpression> "-" <n:NumExpressionM> => substract_days(d,n),
+    "(" <DateExpression> ")",
+    <d:DateLiteral> => d,
+    "today" "(" ")" => get_today(),
+}
+
+pub BooleanBase: bool = {
+    <n1:NumExpression> "==" <n2:NumExpression> => n1 == n2,
+    <n1:NumExpression> "!=" <n2:NumExpression> => n1 != n2,
+    <n1:NumExpression> "<" <n2:NumExpression> => n1 < n2,
+    <n1:NumExpression> "<=" <n2:NumExpression> => n1 <= n2,
+    <n1:NumExpression> ">" <n2:NumExpression> => n1 > n2,
+    <n1:NumExpression> ">=" <n2:NumExpression> => n1 >= n2,
+    <d1:DateExpression> "==" <d2:DateExpression> => d1 == d2,
+    <d1:DateExpression> "!=" <d2:DateExpression> => d1 != d2,
+    <d1:DateExpression> "<" <d2:DateExpression> => d1 < d2,
+    <d1:DateExpression> "<=" <d2:DateExpression> => d1 <= d2,
+    <d1:DateExpression> ">" <d2:DateExpression> => d1 > d2,
+    <d1:DateExpression> ">=" <d2:DateExpression> => d1 >= d2,
+}
+pub BooleanTerm: bool = {
+    <BooleanBase>,
+    "(" <BooleanExpression> ")",
+    <b1:BooleanBase> "&" <b2:BooleanTerm> => b1 && b2,  
+}
+pub BooleanExpression: bool = {
+    <BooleanTerm>,
+    <b1:BooleanTerm> "|" <b2:BooleanExpression> => b1 || b2,
+    <b1:BooleanTerm> "^" <b2:BooleanExpression> => b1 ^ b2,
+}
+
+
+
+pub Calendar: Vec<String> = {
+     <d:Description> "=>" "{" <b:BooleanExpression> "}" => if b {vec![d]} else {vec![]},
+     <c:Calendar> <d:Description> "=>" "{" <b:BooleanExpression> "}" => if b {let mut v =c;v.push(d); v} else {c},
+}
+
+Description: String = <s:r#""(\\\\|\\"|[^"\\])*""#> => s.to_string();
+NumLiteral: i64 = <s:r"[0-9]+"> => i64::from_str(s).unwrap();
+DateLiteral: NaiveDate = <s:r"@[0-9]{4}-[0-9]{2}-[0-9]{2}"> => parse_date(s).unwrap(); 

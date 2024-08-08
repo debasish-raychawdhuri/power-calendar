@@ -32,7 +32,7 @@ pub fn week_of_month(date: NaiveDate) -> i64 {
     ((date.day() - 1) / 7 + 1).into()
 }
 
-pub fn get_today() -> NaiveDate {
+pub fn get_day() -> NaiveDate {
     chrono::Local::now().naive_local().date()
 }
 

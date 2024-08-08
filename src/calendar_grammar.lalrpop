@@ -32,7 +32,7 @@ pub DateExpression:NaiveDate = {
     <d:DateExpression> "-" <n:NumExpressionM> => substract_days(d,n),
     "(" <DateExpression> ")",
     <d:DateLiteral> => d,
-    "today" "(" ")" => get_today(),
+    "day" "(" ")" => get_day(),
 }
 
 pub BooleanBase: bool = {
